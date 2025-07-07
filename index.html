@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#e4e4e4">
+
     <title>Editor de Código Redimensionável com Ações Flutuantes</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
@@ -17,6 +19,7 @@
             font-family: Arial, sans-serif;
             height: 100vh;
             overflow: hidden;
+            
         }
 
         .container {
@@ -36,13 +39,14 @@
 
         #editor-panel {
             flex-grow: 1;
-            background-color: #f4f4f4;
+            background-color: #e4e4e4;
             min-width: 200px;
+            padding-bottom:20px;
         }
 
         #preview-panel {
             flex-grow: 1;
-            background-color: #fff;
+            background-color: #e4e4e4;
             min-width: 200px;
         }
 
@@ -68,14 +72,17 @@
             box-sizing: border-box;
             line-height: 1.5;
             margin-top: 10px;
+            border-radius:10px;
         }
 
         iframe {
             width: 100%;
-            height: calc(100% - 40px);
-            border: none;
+            height: calc(100% - 60px);
             background-color: #fff;
             margin-top: 10px;
+            border:1px solid rgb(163, 163, 163);
+            border-radius:10px;
+            overflow-y: auto;
         }
 
         h2 {
