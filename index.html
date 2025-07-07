@@ -89,16 +89,17 @@
 
         .floating-buttons {
             position: absolute;
-            top: 5px;
-            left: 20px;
+            top: 20px;
+            right: 20px;
             display: flex;
+            flex-direction: column;
             gap: 10px;
             z-index: 100;
         }
 
         .action-button {
-            width: 35px;
-            height: 35px;
+            width: 40px;
+            height: 40px;
             background-color: #007bff;
             color: white;
             border: none;
@@ -116,6 +117,92 @@
         .action-button:hover {
             background-color: #0056b3;
             transform: translateY(-2px);
+        }
+
+        .action-button .tooltip-text {
+            visibility: hidden;
+            width: 120px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 0;
+            position: absolute;
+            z-index: 1;
+            right: 110%;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .action-button .tooltip-text::after {
+            content: " ";
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            margin-top: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: transparent transparent transparent #555;
+        }
+
+        .action-button:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .panel {
+                width: 100%;
+                height: 50vh;
+                min-width: unset;
+                padding-bottom: 0;
+            }
+
+            #editor-panel {
+                order: 1;
+            }
+
+            #preview-panel {
+                order: 2;
+            }
+
+            .splitter {
+                width: 100%;
+                height: 8px;
+                cursor: ns-resize;
+            }
+
+            .floating-buttons {
+                flex-direction: row;
+                top: unset;
+                bottom: 20px;
+                right: 50%;
+                transform: translateX(50%);
+            }
+
+            .action-button .tooltip-text {
+                top: unset;
+                bottom: 110%;
+                left: 50%;
+                transform: translateX(-50%);
+                right: unset;
+            }
+
+            .action-button .tooltip-text::after {
+                top: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                margin-top: 0;
+                border-color: #555 transparent transparent transparent;
+            }
         }
     </style>
 </head>
@@ -136,9 +223,11 @@
         <div class="floating-buttons">
             <button id="downloadBtn" class="action-button">
                 <i class="fas fa-download"></i>
+                <span class="tooltip-text">Baixar HTML</span>
             </button>
             <button id="reloadBtn" class="action-button">
                 <i class="fas fa-sync-alt"></i>
+                <span class="tooltip-text">Recarregar Visualização</span>
             </button>
         </div>
     </div>
@@ -197,25 +286,47 @@
             document.body.style.cursor = 'ew-resize';
             container.style.userSelect = 'none';
             container.style.pointerEvents = 'none';
+
+            if (window.innerWidth <= 768) {
+                document.body.style.cursor = 'ns-resize';
+            }
         });
 
         document.addEventListener('mousemove', (e) => {
             if (!isResizing) return;
 
-            const containerWidth = container.offsetWidth;
-            const splitterWidth = splitter.offsetWidth;
-            const newEditorWidth = e.clientX - editorPanel.getBoundingClientRect().left;
+            if (window.innerWidth > 768) {
+                const containerWidth = container.offsetWidth;
+                const splitterWidth = splitter.offsetWidth;
+                const newEditorWidth = e.clientX - editorPanel.getBoundingClientRect().left;
 
-            const newPreviewWidth = containerWidth - newEditorWidth - splitterWidth;
+                const newPreviewWidth = containerWidth - newEditorWidth - splitterWidth;
 
-            const minPanelWidth = 200;
+                const minPanelWidth = 200;
 
-            if (newEditorWidth >= minPanelWidth && newPreviewWidth >= minPanelWidth) {
-                editorPanel.style.width = `${newEditorWidth}px`;
-                previewPanel.style.width = `${newPreviewWidth}px`;
-                editorPanel.style.flexGrow = '0';
-                previewPanel.style.flexGrow = '0';
-                editor.refresh();
+                if (newEditorWidth >= minPanelWidth && newPreviewWidth >= minPanelWidth) {
+                    editorPanel.style.width = `${newEditorWidth}px`;
+                    previewPanel.style.width = `${newPreviewWidth}px`;
+                    editorPanel.style.flexGrow = '0';
+                    previewPanel.style.flexGrow = '0';
+                    editor.refresh();
+                }
+            } else {
+                const containerHeight = container.offsetHeight;
+                const splitterHeight = splitter.offsetHeight;
+                const newEditorHeight = e.clientY - editorPanel.getBoundingClientRect().top;
+
+                const newPreviewHeight = containerHeight - newEditorHeight - splitterHeight;
+
+                const minPanelHeight = 100;
+
+                if (newEditorHeight >= minPanelHeight && newPreviewHeight >= minPanelHeight) {
+                    editorPanel.style.height = `${newEditorHeight}px`;
+                    previewPanel.style.height = `${newPreviewHeight}px`;
+                    editorPanel.style.flexGrow = '0';
+                    previewPanel.style.flexGrow = '0';
+                    editor.refresh();
+                }
             }
         });
 
@@ -229,21 +340,27 @@
             editor.refresh();
         });
 
-        window.addEventListener('resize', () => {
+        const adjustPanelSizes = () => {
             if (!isResizing) {
-                editorPanel.style.width = '50%';
-                previewPanel.style.width = '50%';
+                if (window.innerWidth > 768) {
+                    editorPanel.style.width = '50%';
+                    previewPanel.style.width = '50%';
+                    editorPanel.style.height = '';
+                    previewPanel.style.height = '';
+                } else {
+                    editorPanel.style.width = '';
+                    previewPanel.style.width = '';
+                    editorPanel.style.height = '50vh';
+                    previewPanel.style.height = '50vh';
+                }
                 editorPanel.style.flexGrow = '1';
                 previewPanel.style.flexGrow = '1';
                 editor.refresh();
             }
-        });
-        
-        window.addEventListener('load', () => {
-            editorPanel.style.width = '50%';
-            previewPanel.style.width = '50%';
-            editor.refresh();
-        });
+        };
+
+        window.addEventListener('resize', adjustPanelSizes);
+        window.addEventListener('load', adjustPanelSizes);
 
         downloadBtn.addEventListener('click', () => {
             const codeToDownload = editor.getValue();
