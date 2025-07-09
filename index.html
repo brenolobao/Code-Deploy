@@ -3,32 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#e4e4e4">
-
-    <title>Editor de Código Redimensionável com Ações Flutuantes</title>
-
+    <title>Editor/Deploy</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
     <style>
         body {
             display: flex;
             margin: 0;
             font-family: Arial, sans-serif;
             height: 100vh;
-            overflow: auto;
-            
+            overflow: hidden;
         }
-
         .container {
             display: flex;
             width: 100%;
             height: 100%;
             position: relative;
         }
-
         .panel {
             box-sizing: border-box;
             display: flex;
@@ -36,20 +28,16 @@
             padding: 10px;
             overflow: hidden;
         }
-
         #editor-panel {
             flex-grow: 1;
-            background-color: #e4e4e4;
+            background-color: #f4f4f4;
             min-width: 200px;
-            padding-bottom:20px;
         }
-
         #preview-panel {
             flex-grow: 1;
-            background-color: #e4e4e4;
+            background-color: #fff;
             min-width: 200px;
         }
-
         .splitter {
             width: 8px;
             cursor: ew-resize;
@@ -58,106 +46,120 @@
             position: relative;
             z-index: 10;
         }
-
         .splitter:hover {
             background-color: #555;
         }
-
         .CodeMirror {
             width: 100%;
-            height: calc(100% - 40px);
+            height: calc(100% - 50px);
             border: 1px solid #ddd;
             font-family: 'Courier New', Courier, monospace;
             font-size: 14px;
             box-sizing: border-box;
             line-height: 1.5;
-            margin-top: 10px;
-            border-radius:10px;
+            margin-top: 5px;
         }
-
         iframe {
             width: 100%;
-            height: calc(100% - 60px);
+            height: calc(100% - 50px);
+            border: none;
             background-color: #fff;
-            margin-top: 10px;
-            border:1px solid rgb(163, 163, 163);
-            border-radius:10px;
-            overflow-y: auto;
+            margin-top: 5px;
         }
-
-        h2 {
-            margin-top: 0;
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .panel-header h2 {
+            margin: 0;
             color: #333;
             font-size: 18px;
-            margin-bottom: 5px;
-            width: 100%;
-            text-align: center;
         }
-
-        .floating-buttons {
-            position: absolute;
-            top: 20px;
-            right: 20px;
+        .action-buttons {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 100;
+            gap: 5px;
         }
-
         .action-button {
-            width: 40px;
-            height: 40px;
-            background-color: #007bff;
-            color: white;
+            background: none;
+            color: #007bff;
             border: none;
-            border-radius: 50%;
             cursor: pointer;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            transition: background-color 0.2s ease, transform 0.2s ease;
+            font-size: 16px;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+            padding: 5px;
             position: relative;
         }
-
         .action-button:hover {
-            background-color: #0056b3;
-            transform: translateY(-2px);
+            opacity: 1;
         }
-
+        .action-button .tooltip-text {
+            visibility: hidden;
+            width: 120px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 0;
+            position: absolute;
+            z-index: 1;
+            top: 100%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .action-button:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        .action-button .tooltip-text::after {
+            content: " ";
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: transparent transparent #555 transparent;
+        }
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
             }
-
             .panel {
                 width: 100%;
                 height: 50vh;
                 min-width: unset;
                 padding-bottom: 0;
             }
-
             #editor-panel {
                 order: 1;
             }
-
             #preview-panel {
                 order: 2;
             }
-
             .splitter {
                 width: 100%;
                 height: 8px;
                 cursor: ns-resize;
             }
-
-            .floating-buttons {
-                flex-direction: row;
+            .action-button .tooltip-text {
                 top: unset;
-                top: 10px;
-                right: 15%;
-                transform: translateX(50%);
+                bottom: 110%;
+                left: 50%;
+                margin-left: -60px;
+            }
+            .action-button .tooltip-text::after {
+                top: 100%;
+                bottom: unset;
+                left: 50%;
+                margin-left: -5px;
+                border-color: #555 transparent transparent transparent;
             }
         }
     </style>
@@ -165,36 +167,38 @@
 <body>
     <div class="container">
         <div class="panel" id="editor-panel">
-            <h2>Editor de Código</h2>
+            <div class="panel-header">
+                <h2>Editor de Código</h2>
+                <div class="action-buttons">
+                    <button id="downloadBtn" class="action-button">
+                        <i class="fas fa-download"></i>
+                        <span class="tooltip-text">Baixar HTML</span>
+                    </button>
+                    <button id="reloadBtn" class="action-button">
+                        <i class="fas fa-sync-alt"></i>
+                        <span class="tooltip-text">Recarregar</span>
+                    </button>
+                </div>
+            </div>
             <textarea id="codeInput" style="display: none;"></textarea>
         </div>
-
         <div class="splitter" id="splitter"></div>
-
         <div class="panel" id="preview-panel">
-            <h2>Visualização do Código</h2>
+            <div class="panel-header">
+                <h2>Visualização</h2>
+            </div>
             <iframe id="previewFrame"></iframe>
         </div>
-
-        <div class="floating-buttons">
-            <button id="downloadBtn" class="action-button">
-                <i class="fas fa-download"></i>
-            </button>
-            <button id="reloadBtn" class="action-button">
-                <i class="fas fa-sync-alt"></i>
-            </button>
-        </div>
     </div>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closetag.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
     <script>
         const initialCode = ``;
-
         const codeInput = document.getElementById('codeInput');
         const previewFrame = document.getElementById('previewFrame');
         const editorPanel = document.getElementById('editor-panel');
@@ -203,7 +207,6 @@
         const container = document.querySelector('.container');
         const downloadBtn = document.getElementById('downloadBtn');
         const reloadBtn = document.getElementById('reloadBtn');
-
         const editor = CodeMirror.fromTextArea(codeInput, {
             mode: 'htmlmixed',
             theme: 'dracula',
@@ -217,47 +220,34 @@
             foldGutter: true,
             gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
         });
-
         editor.setValue(initialCode);
-
         function updatePreview() {
             const code = editor.getValue();
             const doc = previewFrame.contentWindow.document;
-
             doc.open();
             doc.write(code);
             doc.close();
         }
-
         editor.on('change', updatePreview);
-
         updatePreview();
-
         let isResizing = false;
-
         splitter.addEventListener('mousedown', (e) => {
             isResizing = true;
             document.body.style.cursor = 'ew-resize';
             container.style.userSelect = 'none';
             container.style.pointerEvents = 'none';
-
             if (window.innerWidth <= 768) {
                 document.body.style.cursor = 'ns-resize';
             }
         });
-
         document.addEventListener('mousemove', (e) => {
             if (!isResizing) return;
-
             if (window.innerWidth > 768) {
                 const containerWidth = container.offsetWidth;
                 const splitterWidth = splitter.offsetWidth;
                 const newEditorWidth = e.clientX - editorPanel.getBoundingClientRect().left;
-
                 const newPreviewWidth = containerWidth - newEditorWidth - splitterWidth;
-
                 const minPanelWidth = 200;
-
                 if (newEditorWidth >= minPanelWidth && newPreviewWidth >= minPanelWidth) {
                     editorPanel.style.width = `${newEditorWidth}px`;
                     previewPanel.style.width = `${newPreviewWidth}px`;
@@ -269,11 +259,8 @@
                 const containerHeight = container.offsetHeight;
                 const splitterHeight = splitter.offsetHeight;
                 const newEditorHeight = e.clientY - editorPanel.getBoundingClientRect().top;
-
                 const newPreviewHeight = containerHeight - newEditorHeight - splitterHeight;
-
                 const minPanelHeight = 100;
-
                 if (newEditorHeight >= minPanelHeight && newPreviewHeight >= minPanelHeight) {
                     editorPanel.style.height = `${newEditorHeight}px`;
                     previewPanel.style.height = `${newPreviewHeight}px`;
@@ -283,7 +270,6 @@
                 }
             }
         });
-
         document.addEventListener('mouseup', () => {
             isResizing = false;
             document.body.style.cursor = 'default';
@@ -293,7 +279,6 @@
             previewPanel.style.flexGrow = '1';
             editor.refresh();
         });
-
         const adjustPanelSizes = () => {
             if (!isResizing) {
                 if (window.innerWidth > 768) {
@@ -312,10 +297,8 @@
                 editor.refresh();
             }
         };
-
         window.addEventListener('resize', adjustPanelSizes);
         window.addEventListener('load', adjustPanelSizes);
-
         downloadBtn.addEventListener('click', () => {
             const codeToDownload = editor.getValue();
             const blob = new Blob([codeToDownload], { type: 'text/html' });
@@ -328,7 +311,6 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         });
-
         reloadBtn.addEventListener('click', () => {
             updatePreview();
         });
