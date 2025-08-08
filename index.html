@@ -2,195 +2,122 @@
 <html lang="pt-BR">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editor/Deploy</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="icon" href="favicon.png" type="image/png">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Editor com Autocomplete</title>
+
+    <!-- CodeMirror CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css" />
+
+    <!-- show-hint CSS (autocomplete UI) -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.css" />
+
     <style>
+        :root {
+            /* Fundo geral e textos */
+            --color-bg-body: #f4f7fa;
+            /* fundo claro */
+            --color-text-main: #2c3e50;
+            /* texto principal escuro */
+            --color-heading: #1a1a1a;
+            /* título mais escuro */
+
+            /* Painéis */
+            --color-panel-bg-start: #ffffff;
+            /* painel branco */
+            --color-panel-bg-end: #e6ecf1;
+            /* degradê leve */
+            --color-panel-shadow: rgba(0, 0, 0, 0.1);
+            /* sombra suave */
+
+            /* Botões */
+            --color-btn-bg: rgba(44, 62, 80, 0.1);
+            /* botão com fundo azul claro translúcido */
+            --color-btn-text: #34495e;
+            /* texto botão azul escuro */
+
+            /* Iframe */
+            --color-iframe-bg: #ffffff;
+            /* branco para iframe */
+            --color-iframe-shadow: rgba(0, 0, 0, 0.1);
+            /* sombra suave */
+
+            /* Splitter */
+            --color-splitter-bg: transparent;
+            /* mantém transparente */
+        }
+
+
+        html,
         body {
-            display: flex;
+            height: 100%;
             margin: 0;
-            font-family: Arial, sans-serif;
-            height: 100vh;
-            overflow:hidden;
+            background: var(--color-bg-body);
+            color: var(--color-text-main);
+            font-family: Inter, Segoe UI, Arial;
         }
 
         .container {
             display: flex;
-            width: 100%;
-            height: 100%;
-            position: relative;
+            height: 100vh;
+            gap: 6px;
+            padding: 10px;
+            box-sizing: border-box;
         }
 
         .panel {
-            box-sizing: border-box;
+            flex: 1;
             display: flex;
             flex-direction: column;
+            background: linear-gradient(180deg, var(--color-panel-bg-start), var(--color-panel-bg-end));
             padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 6px 18px var(--color-panel-shadow);
+            flex-shrink: 0;
         }
 
-        #editor-panel {
-            flex-grow: 1;
-            background-color: #f4f4f4;
-            min-width: 200px;
-        }
-
-        #preview-panel {
-            flex-grow: 1;
-            background-color: #fff;
-            min-width: 200px;
+        .header {
             display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding-top: 10px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .header h2 {
+            margin: 0;
+            font-size: 14px;
+            color: var(--color-heading);
+            font-weight: 600;
+        }
+
+        .actions button {
+            background: var(--color-btn-bg);
+            border: 0;
+            color: var(--color-btn-text);
+            padding: 6px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .CodeMirror {
+            height: calc(100% - 36px);
+            border-radius: 6px;
+        }
+
+        iframe {
+            height: calc(100% - 36px);
+            border-radius: 6px;
+            border: 0;
+            background: var(--color-iframe-bg);
+            box-shadow: 0 4px 14px var(--color-iframe-shadow);
         }
 
         .splitter {
             width: 8px;
-            cursor: ew-resize;
-            background-color: #333;
-            flex-shrink: 0;
-            position: relative;
-            z-index: 10;
-        }
-
-        .splitter:hover {
-            background-color: #555;
-        }
-
-        .CodeMirror {
-            width: 100%;
-            height: calc(100% - 50px);
-            border: 1px solid #ddd;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 14px;
-            box-sizing: border-box;
-            line-height: 1.5;
-            margin-top: 5px;
-        }
-
-        iframe {
-            width: 100%;
-            height: calc(100% - 50px);
-            border: none;
-            background-color: #fff;
-            margin-top: 5px;
-            transition: width 0.3s ease, height 0.3s ease, border 0.3s ease;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-        }
-
-        #preview-panel.smartphone-mode iframe {
-            width: 375px;
-            height: 667px;
-            border: 8px solid #333;
-            box-sizing: content-box;
-            margin-top: 0;
-        }
-
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 5px;
-        }
-
-        .panel-header h2 {
-            margin: 0;
-            color: #333;
-            font-size: 18px;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 5px;
-        }
-
-        .action-button {
-            background: none;
-            color: #007bff;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            opacity: 0.7;
-            transition: opacity 0.2s ease;
-            padding: 5px;
-            position: relative;
-        }
-
-        .action-button:hover {
-            opacity: 1;
-        }
-
-        .action-button .tooltip-text {
-            visibility: hidden;
-            width: 120px;
-            background-color: #555;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px 0;
-            position: absolute;
-            z-index: 1;
-            top: 100%;
-            left: 50%;
-            margin-left: -60px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 12px;
-            white-space: nowrap;
-        }
-
-        .action-button:hover .tooltip-text {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        .action-button .tooltip-text::after {
-            content: " ";
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            margin-left: -5px;
-            border-width: 5px;
-            border-style: solid;
-            border-color: transparent transparent #555 transparent;
-        }
-
-        body.fullscreen-preview #editor-panel {
-            display: none;
-        }
-
-        body.fullscreen-preview .splitter {
-            display: none;
-        }
-
-        body.fullscreen-preview #preview-panel {
-            width: 100%;
-            flex-grow: 1;
-            padding: 0;
-            align-items: center;
-            padding-top: 0;
-        }
-
-        body.fullscreen-preview #preview-panel iframe {
-            height: 100%;
-            width: 100%;
-            margin-top: 0;
-            border: none;
-            box-shadow: none;
-            border-radius: 0;
-        }
-
-        body.fullscreen-preview #preview-panel.smartphone-mode iframe {
-            width: 375px;
-            height: 667px;
-            border: 8px solid #333;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
+            cursor: col-resize;
+            background: var(--color-splitter-bg);
         }
 
         @media (max-width: 768px) {
@@ -198,57 +125,10 @@
                 flex-direction: column;
             }
 
-            .panel {
-                width: 100%;
-                height: 50vh;
-                min-width: unset;
-                padding-bottom: 0;
-            }
-
-            #editor-panel {
-                order: 1;
-            }
-
-            #preview-panel {
-                order: 2;
-                align-items: flex-start;
-                padding-top: 10px;
-            }
-
             .splitter {
-                width: 100%;
                 height: 8px;
-                cursor: ns-resize;
-            }
-
-            .action-button .tooltip-text {
-                top: unset;
-                bottom: 110%;
-                left: 50%;
-                margin-left: -60px;
-            }
-
-            .action-button .tooltip-text::after {
-                top: 100%;
-                bottom: unset;
-                left: 50%;
-                margin-left: -5px;
-                border-color: #555 transparent transparent transparent;
-            }
-
-            #preview-panel.smartphone-mode iframe {
-                width: calc(100% - 20px);
-                height: calc(100% - 20px);
-                max-width: 375px;
-                max-height: 667px;
-                margin: auto;
-            }
-
-            body.fullscreen-preview #preview-panel.smartphone-mode iframe {
-                width: calc(100% - 20px);
-                height: calc(100% - 20px);
-                max-width: 375px;
-                max-height: 667px;
+                width: 100%;
+                cursor: row-resize;
             }
         }
     </style>
@@ -256,194 +136,196 @@
 
 <body>
     <div class="container">
+        <!-- Painel do editor -->
         <div class="panel" id="editor-panel">
-            <div class="panel-header">
-                <h2>Editor de Código</h2>
-                <div class="action-buttons">
-                    <button id="downloadBtn" class="action-button">
-                        <i class="fas fa-download"></i>
-                        <span class="tooltip-text">Baixar HTML</span>
-                    </button>
-                    <button id="reloadBtn" class="action-button">
-                        <i class="fas fa-sync-alt"></i>
-                        <span class="tooltip-text">Recarregar</span>
-                    </button>
+            <div class="header">
+                <h2>Editor</h2>
+                <div class="actions">
+                    <button id="downloadBtn" title="Baixar">Baixar</button>
+                    <button id="reloadBtn" title="Recarregar">Recarregar</button>
                 </div>
             </div>
-            <textarea id="codeInput" style="display: none;"></textarea>
+            <textarea id="codeInput" style="display:none"></textarea>
         </div>
+
+        <!-- Divisor -->
         <div class="splitter" id="splitter"></div>
+
+        <!-- Painel de preview -->
         <div class="panel" id="preview-panel">
-            <div class="panel-header">
-                <h2>Visualização</h2>
-                <div class="action-buttons">
-                    <button id="toggleSmartphoneModeBtn" class="action-button">
-                        <i class="fas fa-mobile-alt"></i>
-                        <span class="tooltip-text">Modo Smartphone</span>
-                    </button>
-                    <button id="toggleFullscreenBtn" class="action-button">
-                        <i class="fas fa-expand-arrows-alt"></i>
-                        <span class="tooltip-text">Tela Cheia</span>
-                    </button>
+            <div class="header">
+                <h2>Preview</h2>
+                <div class="actions">
+                    <button id="smartBtn" title="Modo smartphone">📱</button>
+                    <button id="fsBtn" title="Tela cheia">⤢</button>
                 </div>
             </div>
             <iframe id="previewFrame"></iframe>
         </div>
     </div>
+
+    <!-- CodeMirror Core -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+
+    <!-- Modes (ordem importante) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
+
+    <!-- Auto-close -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closetag.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
+
+    <!-- Hints -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/xml-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/html-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/css-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/javascript-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/anyword-hint.min.js"></script>
+
+    <!-- Script principal -->
     <script>
-        const initialCode = ``;
         const codeInput = document.getElementById('codeInput');
         const previewFrame = document.getElementById('previewFrame');
+        const splitter = document.getElementById('splitter');
         const editorPanel = document.getElementById('editor-panel');
         const previewPanel = document.getElementById('preview-panel');
-        const splitter = document.getElementById('splitter');
-        const container = document.querySelector('.container');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const reloadBtn = document.getElementById('reloadBtn');
-        const toggleSmartphoneModeBtn = document.getElementById('toggleSmartphoneModeBtn');
-        const toggleFullscreenBtn = document.getElementById('toggleFullscreenBtn');
 
         const editor = CodeMirror.fromTextArea(codeInput, {
             mode: 'htmlmixed',
             theme: 'dracula',
             lineNumbers: true,
             lineWrapping: true,
-            indentUnit: 4,
-            tabSize: 4,
             autoCloseTags: true,
             autoCloseBrackets: true,
             matchBrackets: true,
-            foldGutter: true,
-            gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
+            extraKeys: {
+                "Ctrl-Space": cm => cm.showHint({ completeSingle: false }),
+                "Cmd-Space": cm => cm.showHint({ completeSingle: false }),
+                "Ctrl-I": cm => cm.showHint({ completeSingle: false })
+            },
+            hintOptions: { completeSingle: false }
         });
 
-        editor.setValue(initialCode);
+        const DEFAULT = ``;
+
+        editor.setValue(localStorage.getItem('lastCode') || DEFAULT);
 
         function updatePreview() {
-            const code = editor.getValue();
             const doc = previewFrame.contentWindow.document;
             doc.open();
-            doc.write(code);
+            doc.write(editor.getValue());
             doc.close();
         }
-
-        editor.on('change', updatePreview);
         updatePreview();
 
-        let isResizing = false;
-        splitter.addEventListener('mousedown', (e) => {
-            isResizing = true;
-            document.body.style.cursor = 'ew-resize';
-            container.style.userSelect = 'none';
-            container.style.pointerEvents = 'none';
-            if (window.innerWidth <= 768) {
-                document.body.style.cursor = 'ns-resize';
+        let timer;
+        editor.on('change', () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                localStorage.setItem('lastCode', editor.getValue());
+                updatePreview();
+            }, 300);
+        });
+
+        editor.on('inputRead', (cm, change) => {
+            const ch = change.text && change.text[0];
+            if (!ch || !(/[a-zA-Z0-9<_\.\-\#]/.test(ch))) return;
+
+            try {
+                const token = cm.getTokenAt(cm.getCursor());
+                const inner = CodeMirror.innerMode(cm.getMode(), token.state).mode.name || '';
+                let hintFunc = null;
+
+                if (/xml|html/.test(inner)) hintFunc = CodeMirror.hint.html;
+                else if (/css/.test(inner)) hintFunc = CodeMirror.hint.css;
+                else if (/javascript|ecma/.test(inner)) hintFunc = CodeMirror.hint.javascript;
+                else hintFunc = CodeMirror.hint.anyword;
+
+                cm.showHint({ hint: hintFunc, completeSingle: false });
+            } catch {
+                cm.showHint({ hint: CodeMirror.hint.anyword, completeSingle: false });
             }
         });
 
-        document.addEventListener('mousemove', (e) => {
-            if (!isResizing) return;
-            if (window.innerWidth > 768) {
-                const containerWidth = container.offsetWidth;
-                const splitterWidth = splitter.offsetWidth;
-                const newEditorWidth = e.clientX - editorPanel.getBoundingClientRect().left;
-                const newPreviewWidth = containerWidth - newEditorWidth - splitterWidth;
-                const minPanelWidth = 200;
-                if (newEditorWidth >= minPanelWidth && newPreviewWidth >= minPanelWidth) {
-                    editorPanel.style.width = `${newEditorWidth}px`;
-                    previewPanel.style.width = `${newPreviewWidth}px`;
-                    editorPanel.style.flexGrow = '0';
-                    previewPanel.style.flexGrow = '0';
-                    editor.refresh();
-                }
-            } else {
-                const containerHeight = container.offsetHeight;
-                const splitterHeight = splitter.offsetHeight;
-                const newEditorHeight = e.clientY - editorPanel.getBoundingClientRect().top;
-                const newPreviewHeight = containerHeight - newEditorHeight - splitterHeight;
-                const minPanelHeight = 100;
-                if (newEditorHeight >= minPanelHeight && newPreviewHeight >= minPanelHeight) {
-                    editorPanel.style.height = `${newEditorHeight}px`;
-                    previewPanel.style.height = `${newPreviewHeight}px`;
-                    editorPanel.style.flexGrow = '0';
-                    previewPanel.style.flexGrow = '0';
-                    editor.refresh();
-                }
-            }
-        });
-
-        document.addEventListener('mouseup', () => {
-            isResizing = false;
-            document.body.style.cursor = 'default';
-            container.style.userSelect = '';
-            container.style.pointerEvents = '';
-            if (!document.body.classList.contains('fullscreen-preview')) {
-                editorPanel.style.flexGrow = '1';
-                previewPanel.style.flexGrow = '1';
-            }
-            editor.refresh();
-        });
-
-        const adjustPanelSizes = () => {
-            if (!isResizing && !document.body.classList.contains('fullscreen-preview')) {
-                if (window.innerWidth > 768) {
-                    editorPanel.style.width = '50%';
-                    previewPanel.style.width = '50%';
-                    editorPanel.style.height = '';
-                    previewPanel.style.height = '';
-                } else {
-                    editorPanel.style.width = '';
-                    previewPanel.style.width = '';
-                    editorPanel.style.height = '50vh';
-                    previewPanel.style.height = '50vh';
-                }
-                editorPanel.style.flexGrow = '1';
-                previewPanel.style.flexGrow = '1';
-            }
-            editor.refresh();
-        };
-
-        window.addEventListener('resize', adjustPanelSizes);
-        window.addEventListener('load', adjustPanelSizes);
-
-        downloadBtn.addEventListener('click', () => {
-            const codeToDownload = editor.getValue();
-            const blob = new Blob([codeToDownload], { type: 'text/html' });
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            const blob = new Blob([editor.getValue()], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = 'meu_codigo.html';
-            document.body.appendChild(a);
             a.click();
-            document.body.removeChild(a);
             URL.revokeObjectURL(url);
         });
 
-        reloadBtn.addEventListener('click', () => {
-            updatePreview();
-        });
+        document.getElementById('reloadBtn').addEventListener('click', updatePreview);
 
-        toggleSmartphoneModeBtn.addEventListener('click', () => {
+        document.getElementById('smartBtn').addEventListener('click', () => {
             previewPanel.classList.toggle('smartphone-mode');
+            const iframe = previewPanel.querySelector('iframe');
+
             if (previewPanel.classList.contains('smartphone-mode')) {
+                iframe.style.width = '375px';
+                iframe.style.height = '667px';
                 previewPanel.style.alignItems = 'center';
             } else {
+                iframe.style.width = '100%';
+                iframe.style.height = 'calc(100% - 36px)';
                 previewPanel.style.alignItems = 'flex-start';
             }
         });
 
-        toggleFullscreenBtn.addEventListener('click', () => {
+        document.getElementById('fsBtn').addEventListener('click', () => {
             document.body.classList.toggle('fullscreen-preview');
-            adjustPanelSizes();
+            const fs = document.body.classList.contains('fullscreen-preview');
+            const iframe = previewPanel.querySelector('iframe');
+
+            if (fs) {
+                editorPanel.style.display = 'none';
+                splitter.style.display = 'none';
+                previewPanel.style.flex = '1 1 100%';
+                iframe.style.width = '100%';
+                iframe.style.height = '100vh';
+            } else {
+                editorPanel.style.display = '';
+                splitter.style.display = '';
+                iframe.style.height = 'calc(100% - 36px)';
+            }
             editor.refresh();
         });
+        let isResizing = false;
+
+        splitter.addEventListener('mousedown', () => {
+            isResizing = true;
+            document.body.style.userSelect = 'none'; // evita seleção de texto
+        });
+
+        document.addEventListener('mouseup', () => {
+            isResizing = false;
+            document.body.style.userSelect = '';
+        });
+
+        document.addEventListener('mousemove', e => {
+            if (!isResizing) return;
+
+            if (window.innerWidth > 768) {
+                // Horizontal
+                const minWidth = 200;
+                const maxWidth = window.innerWidth - 200;
+                const newWidth = Math.min(maxWidth, Math.max(minWidth, e.clientX));
+                editorPanel.style.flex = `0 0 ${newWidth}px`;
+            } else {
+                // Vertical
+                const minHeight = 150;
+                const maxHeight = window.innerHeight - 150;
+                const newHeight = Math.min(maxHeight, Math.max(minHeight, e.clientY));
+                editorPanel.style.flex = `0 0 ${newHeight}px`;
+            }
+            editor.refresh();
+        });
+
     </script>
 </body>
 
